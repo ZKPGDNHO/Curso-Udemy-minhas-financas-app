@@ -1,63 +1,91 @@
-import React from "react";
-import Card from '../components/card'
+import React, { useState, useContext } from "react";
+import Card from '../components/card';
 import FormGroup from "../components/form-group";
-class Login extends React.Component{
+import { useNavigate } from 'react-router-dom';
+//import axios from "axios";
+import UsuarioService from "../app/service/UsuarioService";
+import LocalStorageService from "../app/service/localstorageService";
+import {mostrarMsgErro} from '../components/toastr'
+import { AuthContext } from "../main/provedorAutenticacao"; 
 
-    state={
-        email:'',
-        senha:''
-    }
-    entrar = ()=>{
-        console.log('Email: ', this.state.email)
-        console.log('Senha: ', this.state.senha)
+function Login() {
+    const [email, setEmail] = useState('');
+    const [senha, setSenha] = useState('');
+    //const [msgErro,setMsgErro] = useState(null);
+    const navigate = useNavigate();
 
-    }
+    const service = new UsuarioService();
 
-    render() {
-        return(
-        <div className="container">
-            <div className="row">
-                <div className="col-md-6" style={{position: 'relative', left: '300px'} }>
-                        <div className="bs-docs-section">
-                            <Card title="Login">
-                                <div className="row">
-                                    <div className="col-ld-12">
-                                        <div className="bs-component">
-                                            <fieldset>
-                                                <FormGroup label="Email: *" htmlFor="ExampleInputEmail">
+    const authContext = useContext(AuthContext);
 
-                                                    <input type="email" 
-                                                            value={this.state.email}
-                                                            onChange={e => this.setState({email: e.target.value})}
-                                                           className="form-control" id="ExampleInputEmail"
-                                                           aria-describedby="emailHelp" placeholder="Digite o Email"/>
+    const entrar = () => {
 
-                                                </FormGroup>
+        const dadosLogin = {
+            email: email,
+            senha: senha
+        };
 
-                                                <FormGroup label="Senha: *" htmlFor="exampleInputPassword1">
+        service.autenticar(dadosLogin)
+        .then( response => {
 
-                                                    <input type="password"
-                                                            value={this.state.senha}
-                                                            onChange={e => this.setState({senha: e.target.value})}
-                                                           className="form-control"
-                                                           id="exampleInputPassword1"
-                                                           placeholder="Digite a Senha"/>
+            LocalStorageService.addItem('_usuario_logado', response.data)
+            authContext.iniciarSessao(response.data)
 
-                                                </FormGroup>
+            navigate('/home');
+            
+        }).catch(erro => {
+            mostrarMsgErro(erro.response.data)
+        })
 
-                                                <button onClick={this.entrar} className="btn btn-success">Entrar</button>
-                                                <button className="btn btn-danger">Cadastar</button>
-                                            </fieldset>
-                                        </div>
-                                    </div>
+        console.log('executado a requisicao');
+    };
+
+    const prepareCadastrar = () => {
+        navigate('/cadastro-usuarios');  
+    };
+
+    return (
+        <div className="row">
+            <div className="col-md-6" style={{position: 'relative', left: '300px'}}>
+                <div className="bs-docs-section">
+                    <Card title="Login">
+                        <div className="row">
+                            <div className="col-ld-12">
+                                <div className="bs-component">
+                                    <fieldset>
+                                        <FormGroup label="Email: *" htmlFor="ExampleInputEmail">
+                                            <input type="email" 
+                                                value={email}
+                                                onChange={e => setEmail(e.target.value)}
+                                                className="form-control" id="ExampleInputEmail"
+                                                aria-describedby="emailHelp" placeholder="Digite o Email"/>
+                                        </FormGroup>
+
+                                        <FormGroup label="Senha: *" htmlFor="exampleInputPassword1">
+                                            <input type="password"
+                                                value={senha}
+                                                onChange={e => setSenha(e.target.value)}
+                                                className="form-control"
+                                                id="exampleInputPassword1"
+                                                placeholder="Digite a Senha"/>
+                                        </FormGroup>
+
+                                        <br/>
+                                        <button onClick={entrar} title="Entrar" type="button" className="btn btn-success">
+                                            <i className="pi pi-sign-in"> Entrar </i>
+                                        </button>
+                                        <button onClick={prepareCadastrar} title="Cadastrar" type="button" className="btn btn-danger">
+                                            <i className="pi pi-user-plus"> Cadastrar </i>
+                                        </button>
+                                    </fieldset>
                                 </div>
-                            </Card>
+                            </div>
                         </div>
+                    </Card>
                 </div>
             </div>
         </div>
-        )
-    }
+    );
 }
 
-export default Login
+export default Login;
